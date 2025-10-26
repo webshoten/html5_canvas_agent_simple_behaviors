@@ -26,12 +26,7 @@ type WorkerMessage =
 let offscreenCanvas: OffscreenCanvas | null = null;
 let ctx: OffscreenCanvasRenderingContext2D | null = null;
 let canvasSize = { width: 0, height: 0 };
-let config: ConfigType = {
-    populationN: 100,
-    agentRadius: 10,
-    color: "hsl(210 80% 60%)",
-    velocity: { minSpeed: 0.5, maxSpeed: 2.0 },
-};
+let config: ConfigType | null = null; // メインスレッドから受け取る
 let agents: Agent[] = [];
 let animator: WorkerAnimator | null = null;
 
@@ -80,12 +75,12 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
             console.log("[Worker] Agents created:", agents.length);
 
-            // アニメーター作成
+            // アニメーター作成（configは上で設定済み）
             animator = createAgentAnimator({
                 ctx,
                 canvasSize,
                 agents,
-                config,
+                config: config!,
             });
 
             console.log("[Worker] Canvas setup complete");
