@@ -30,10 +30,10 @@ export const useStore = create<StoreState>((set, get) => ({
     simTimeSec: 0,
     canvasSize: { width: 0, height: 0 },
     config: {
-        populationN: 4,
+        populationN: 100,
         agentRadius: 10,
         color: "hsl(210 80% 60%)",
-        velocity: { minSpeed: 0.5, maxSpeed: 2.0 },
+        velocity: { minSpeed: 1, maxSpeed: 3.0 },
     },
     agents: [],
     reset: ({ width, height }: { width: number; height: number }) => {
