@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { createAnimator } from "../logic/animator";
 import { useSimStore } from "../state/store";
+import { useCanvasDpr } from "./use-canvas-dpr";
 
 export const useAgentAnimation = ({
     mainCanvasRef,
@@ -12,18 +13,20 @@ export const useAgentAnimation = ({
 }) => {
     const animatorRef = useRef<ReturnType<typeof createAnimator> | null>(null);
 
+    // DPR対応（高解像度ディスプレイ対応） + 画面サイズ取得
+    const canvasSize = useCanvasDpr({
+        canvasRef: mainCanvasRef,
+        ctxRef: mainCtxRef,
+    });
+
     useEffect(() => {
         const canvas = mainCanvasRef.current;
         const ctx = mainCtxRef.current;
-        if (!canvas || !ctx) return;
+        if (!canvas || !ctx || canvasSize.width === 0) return;
 
-        // 初期化
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        canvas.width = w;
-        canvas.height = h;
+        // シミュレーション初期化（論理サイズで）
         const simStore = useSimStore.getState();
-        simStore.reset({ width: w, height: h });
+        simStore.reset({ width: canvasSize.width, height: canvasSize.height });
 
         const animator = createAnimator(
             /** ここがループする */
@@ -53,7 +56,7 @@ export const useAgentAnimation = ({
         animatorRef.current = animator;
         return () =>
             animator.stop(); /** ループを停止(animatorRefが停止される) */
-    }, [mainCanvasRef, mainCtxRef]);
+    }, [mainCanvasRef, mainCtxRef, canvasSize]);
 
     return animatorRef;
 };
