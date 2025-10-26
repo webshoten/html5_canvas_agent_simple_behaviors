@@ -1,66 +1,84 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
-import { createAnimator } from "../logic/animator";
 import { useStore } from "../state/store";
-import { useCanvasDpr } from "./use-canvas-dpr";
 
 export const useAgentAnimation = ({
     mainCanvasRef,
-    mainCtxRef,
+    offscreenRef,
 }: {
     mainCanvasRef: RefObject<HTMLCanvasElement | null>;
-    mainCtxRef: RefObject<
-        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
-    >;
+    offscreenRef: RefObject<OffscreenCanvas | null>;
 }) => {
-    const animatorRef = useRef<ReturnType<typeof createAnimator> | null>(null);
+    const workerRef = useRef<Worker | null>(null);
     const canvasSize = useStore((state) => state.canvasSize);
+    const config = useStore((state) => state.config);
 
-    // DPR対応（高解像度ディスプレイ対応） + 画面サイズ取得・store更新
-    useCanvasDpr({
-        canvasRef: mainCanvasRef,
-        ctxRef: mainCtxRef,
-    });
-
+    // Worker初期化：canvasSizeが変わったら再起動（シンプル）
     useEffect(() => {
         const canvas = mainCanvasRef.current;
-        const ctx = mainCtxRef.current;
-        if (!canvas || !ctx || canvasSize.width === 0) return;
 
-        // シミュレーション初期化（論理サイズで）
-        const simStore = useStore.getState();
-        simStore.reset({ width: canvasSize.width, height: canvasSize.height });
+        if (!canvas || canvasSize.width === 0 || canvasSize.height === 0) {
+            console.log("[Main] Canvas not ready or size is 0");
+            return;
+        }
 
-        const animator = createAnimator(
-            /** ここがループする */
-            (
-                _dt, /** 1フレームの時間（秒） */
-                _dtmTimeSec, /** シミュレーション時間（秒） */
-            ) => {
-                // 毎フレーム最新のstoreを取得
-                const store = useStore.getState();
-                const agents = store.agents;
+        console.log("[Main] Initializing Worker...");
 
-                // クリア（論理サイズでクリア）
-                ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-                // エージェントを更新（論理サイズで境界判定）
-                agents.forEach((agent) => {
-                    agent.update(
-                        canvasSize.width,
-                        canvasSize.height,
-                        ctx,
-                        store.config.color,
-                    );
-                });
+        // Worker作成
+        const worker = new Worker(
+            new URL("../workers/agent-worker.ts", import.meta.url),
+            { type: "module" },
+        );
+        workerRef.current = worker;
+
+        // Workerからのメッセージを受信
+        worker.onmessage = (e) => {
+            console.log("[Main] Received from worker:", e.data);
+        };
+
+        // Workerエラーハンドリング
+        worker.onerror = (error) => {
+            console.error("[Main] Worker error:", error);
+        };
+
+        // OffscreenCanvasを作成
+        const offscreen = canvas.transferControlToOffscreen();
+        offscreenRef.current = offscreen;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        // OffscreenCanvasのサイズを設定
+        offscreen.width = canvasSize.width * dpr;
+        offscreen.height = canvasSize.height * dpr;
+
+        console.log("[Main] Transferring OffscreenCanvas to worker...", {
+            physical: { width: offscreen.width, height: offscreen.height },
+            logical: canvasSize,
+            dpr,
+        });
+
+        // Workerに転送して初期化
+        worker.postMessage(
+            {
+                type: "init",
+                canvas: offscreen,
+                canvasSize: {
+                    width: canvasSize.width,
+                    height: canvasSize.height,
+                },
+                dpr,
+                config,
             },
+            [offscreen],
         );
 
-        /** createAnimatorの引数がループする */
-        animator.start(); /** 最初のフレームを描画 */
-        animatorRef.current = animator;
-        return () =>
-            animator.stop(); /** ループを停止(animatorRefが停止される) */
-    }, [mainCanvasRef, mainCtxRef, canvasSize]);
+        return () => {
+            console.log("[Main] Terminating worker...");
+            worker.terminate();
+            workerRef.current = null;
+            offscreenRef.current = null;
+        };
+    }, [mainCanvasRef, offscreenRef, canvasSize, config]);
 
-    return animatorRef;
+    return workerRef;
 };

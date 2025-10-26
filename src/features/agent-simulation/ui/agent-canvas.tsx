@@ -1,28 +1,31 @@
-import { type RefObject, useEffect } from 'react';
+import type { RefObject } from 'react';
+import { useCanvasDpr } from '../hooks/use-canvas-dpr';
+import { useStore } from '../state/store';
 
 export const AgentCanvas = ({
   mainCanvasRef,
-  mainCtxRef,
+  offscreenRef,
 }: {
   mainCanvasRef: RefObject<HTMLCanvasElement | null>;
-  mainCtxRef: RefObject<
-    CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
-  >;
+  offscreenRef: RefObject<OffscreenCanvas | null>;
 }) => {
-  useEffect(() => {
-    const canvas = mainCanvasRef.current;
-    if (!canvas) return;
+  const canvasSize = useStore((state) => state.canvasSize);
 
-    // OffscreenCanvasを作成
-    const offscreen = canvas.transferControlToOffscreen();
+  // DPR対応（HTMLCanvasのCSSサイズのみ管理）
+  useCanvasDpr({
+    canvasRef: mainCanvasRef,
+  });
 
-    // OffscreenCanvasのコンテキストを取得
-    mainCtxRef.current = offscreen.getContext('2d');
-  }, [mainCanvasRef, mainCtxRef]);
+  // canvasSizeが変わったらcanvas要素を再作成（keyで制御）
+  const canvasKey = `${canvasSize.width}-${canvasSize.height}`;
 
   return (
     <div className="fixed inset-0 z-0 bg-black">
-      <canvas ref={mainCanvasRef} className="block w-full h-full" />
+      <canvas
+        key={canvasKey}
+        ref={mainCanvasRef}
+        className="block w-full h-full"
+      />
     </div>
   );
 };
