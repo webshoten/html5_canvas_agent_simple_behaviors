@@ -3,104 +3,10 @@
  * 描画処理をメインスレッドから分離して実行
  */
 
-// ========================================
-// 型定義
-// ========================================
-type Vector2 = { x: number; y: number };
-
-type ConfigType = {
-    populationN: number;
-    agentRadius: number;
-    color: string;
-    velocity: { minSpeed: number; maxSpeed: number };
-};
-
-// ========================================
-// Agent クラス
-// ========================================
-class Agent {
-    x: number;
-    y: number;
-    radius: number;
-    color: string;
-    velocity: Vector2;
-    infectedAt: number | null;
-
-    constructor(
-        x: number,
-        y: number,
-        radius: number,
-        color: string,
-        velocity: Vector2,
-    ) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.color = color;
-        this.velocity = velocity;
-        this.infectedAt = null;
-    }
-
-    draw(
-        c: OffscreenCanvasRenderingContext2D,
-        color: string,
-    ): void {
-        c.beginPath();
-        c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        c.fillStyle = color;
-        c.fill();
-    }
-
-    update(
-        width: number,
-        height: number,
-        c: OffscreenCanvasRenderingContext2D,
-        color: string,
-    ) {
-        // 位置を更新
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
-
-        // 周期境界条件（半径込み）- 論理サイズで判定
-        if (this.x < -this.radius) this.x = width + this.radius;
-        if (this.x > width + this.radius) this.x = -this.radius;
-        if (this.y < -this.radius) this.y = height + this.radius;
-        if (this.y > height + this.radius) this.y = -this.radius;
-
-        // 描画
-        this.draw(c, color);
-    }
-}
-
-// ========================================
-// エージェント生成関数
-// ========================================
-function createPopulation({
-    width,
-    height,
-    config,
-}: {
-    width: number;
-    height: number;
-    config: ConfigType;
-}): Agent[] {
-    const agents: Agent[] = [];
-    const { populationN, agentRadius, color, velocity } = config;
-
-    for (let i = 0; i < populationN; i++) {
-        const x = Math.random() * width;
-        const y = Math.random() * height;
-        const speed = velocity.minSpeed +
-            Math.random() * (velocity.maxSpeed - velocity.minSpeed);
-        const angle = Math.random() * Math.PI * 2;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-
-        agents.push(new Agent(x, y, agentRadius, color, { x: vx, y: vy }));
-    }
-
-    return agents;
-}
+import type { Agent } from "../logic/agent";
+import { createPopulation } from "../logic/create-population";
+import type { ConfigType } from "../state/store";
+import { createAgentAnimator, type WorkerAnimator } from "./worker-animator";
 
 // ========================================
 // Workerのメッセージ型定義
@@ -127,60 +33,10 @@ let config: ConfigType = {
     velocity: { minSpeed: 0.5, maxSpeed: 2.0 },
 };
 let agents: Agent[] = [];
-
-// アニメーション状態
-let rafId: number | null = null;
-let lastTs: number | null = null;
-let _simTimeSec = 0;
+let animator: WorkerAnimator | null = null;
 
 // Worker起動確認
 console.log("[Worker] Agent Worker initialized");
-
-// アニメーションループ関数
-function animationLoop(ts: number) {
-    if (!ctx || !offscreenCanvas) return;
-
-    if (lastTs == null) lastTs = ts;
-    const dt = Math.max(0, (ts - lastTs) / 1000); // 1フレームの時間（秒）
-    lastTs = ts;
-    _simTimeSec += dt;
-
-    // クリア
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-
-    // エージェントを更新・描画
-    agents.forEach((agent) => {
-        agent.update(
-            canvasSize.width,
-            canvasSize.height,
-            ctx!,
-            config.color,
-        );
-    });
-
-    // 次のフレームをリクエスト
-    rafId = requestAnimationFrame(animationLoop);
-}
-
-// アニメーション開始
-function startAnimation() {
-    if (rafId != null) return; // 既に実行中
-    console.log("[Worker] Starting animation loop");
-    lastTs = null;
-    _simTimeSec = 0;
-    rafId = requestAnimationFrame(animationLoop);
-}
-
-// アニメーション停止
-function stopAnimation() {
-    if (rafId != null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-    }
-    lastTs = null;
-    _simTimeSec = 0;
-    console.log("[Worker] Animation stopped");
-}
 
 // メインスレッドからのメッセージを受信
 self.onmessage = (e: MessageEvent<WorkerMessage>) => {
@@ -224,22 +80,30 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
 
             console.log("[Worker] Agents created:", agents.length);
 
+            // アニメーター作成
+            animator = createAgentAnimator({
+                ctx,
+                canvasSize,
+                agents,
+                config,
+            });
+
             console.log("[Worker] Canvas setup complete");
             self.postMessage({ type: "initialized" });
 
             // アニメーション自動開始
-            startAnimation();
+            animator.start();
             break;
         }
 
         case "start":
             console.log("[Worker] Animation start requested");
-            startAnimation();
+            animator?.start();
             break;
 
         case "stop":
             console.log("[Worker] Animation stop requested");
-            stopAnimation();
+            animator?.stop();
             break;
     }
 };
