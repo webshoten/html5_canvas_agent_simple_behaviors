@@ -14,6 +14,7 @@ export type ConfigType = {
 type StoreState = {
     lastTs: number | null;
     simTimeSec: number;
+    canvasSize: { width: number; height: number };
     config: ConfigType;
     agents: Agent[];
     reset: ({ width, height }: { width: number; height: number }) => void;
@@ -21,11 +22,13 @@ type StoreState = {
     /** シミュレーション時間（秒）を更新 */
     setSimTimeSec: (t: number) => void;
     setAgents: (list: Agent[]) => void;
+    setCanvasSize: (size: { width: number; height: number }) => void;
 };
 
-export const useSimStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set, get) => ({
     lastTs: null,
     simTimeSec: 0,
+    canvasSize: { width: 0, height: 0 },
     config: {
         populationN: 4,
         agentRadius: 10,
@@ -58,4 +61,5 @@ export const useSimStore = create<StoreState>((set, get) => ({
         }),
     setSimTimeSec: (t) => set({ simTimeSec: t }),
     setAgents: (list) => set({ agents: list }),
+    setCanvasSize: (size) => set({ canvasSize: size }),
 }));

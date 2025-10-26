@@ -1,14 +1,14 @@
 "use client";
 
 import type { RefObject } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useStore } from "../state/store";
 
 /**
  * Canvasを高解像度ディスプレイ（Retina等）に対応させるhooks
- * 画面サイズの取得とDPR対応を行う
+ * 画面サイズの取得とDPR対応を行い、storeに保存する
  * @param canvasRef - Canvas要素のRef
  * @param ctxRef - CanvasRenderingContext2Dのref
- * @returns 論理サイズ { width, height }
  */
 export const useCanvasDpr = ({
     canvasRef,
@@ -17,7 +17,7 @@ export const useCanvasDpr = ({
     canvasRef: RefObject<HTMLCanvasElement | null>;
     ctxRef: RefObject<CanvasRenderingContext2D | null>;
 }) => {
-    const [size, setSize] = useState({ width: 0, height: 0 });
+    const setCanvasSize = useStore((state) => state.setCanvasSize);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -41,8 +41,8 @@ export const useCanvasDpr = ({
             // コンテキストをDPRでスケール（描画座標は論理サイズで扱える）
             ctx.scale(dpr, dpr);
 
-            // 論理サイズを保存
-            setSize({ width: w, height: h });
+            // 論理サイズをstoreに保存
+            setCanvasSize({ width: w, height: h });
         };
 
         // 初回セットアップ
@@ -55,7 +55,5 @@ export const useCanvasDpr = ({
 
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
-    }, [canvasRef, ctxRef]);
-
-    return size;
+    }, [canvasRef, ctxRef, setCanvasSize]);
 };

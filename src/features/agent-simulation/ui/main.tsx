@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useAgentAnimation } from '../hooks/use-agent-animation';
-import { useSimStore } from '../state/store';
+import { useStore } from '../state/store';
 import { AgentCanvas } from './agent-canvas';
 
 export const AgentSimulationMain = () => {
@@ -22,7 +22,7 @@ export const AgentSimulationMain = () => {
   });
 
   //configだけ監視
-  const _config = useSimStore((state) => state.config);
+  const _config = useStore((state) => state.config);
 
   return <AgentCanvas mainCanvasRef={mainCanvasRef} mainCtxRef={mainCtxRef} />;
 };

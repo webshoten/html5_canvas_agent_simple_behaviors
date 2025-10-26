@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
 import { createAnimator } from "../logic/animator";
-import { useSimStore } from "../state/store";
+import { useStore } from "../state/store";
 import { useCanvasDpr } from "./use-canvas-dpr";
 
 export const useAgentAnimation = ({
@@ -12,9 +12,10 @@ export const useAgentAnimation = ({
     mainCtxRef: RefObject<CanvasRenderingContext2D | null>;
 }) => {
     const animatorRef = useRef<ReturnType<typeof createAnimator> | null>(null);
+    const canvasSize = useStore((state) => state.canvasSize);
 
-    // DPR対応（高解像度ディスプレイ対応） + 画面サイズ取得
-    const canvasSize = useCanvasDpr({
+    // DPR対応（高解像度ディスプレイ対応） + 画面サイズ取得・store更新
+    useCanvasDpr({
         canvasRef: mainCanvasRef,
         ctxRef: mainCtxRef,
     });
@@ -25,7 +26,7 @@ export const useAgentAnimation = ({
         if (!canvas || !ctx || canvasSize.width === 0) return;
 
         // シミュレーション初期化（論理サイズで）
-        const simStore = useSimStore.getState();
+        const simStore = useStore.getState();
         simStore.reset({ width: canvasSize.width, height: canvasSize.height });
 
         const animator = createAnimator(
@@ -35,7 +36,7 @@ export const useAgentAnimation = ({
                 _dtmTimeSec, /** シミュレーション時間（秒） */
             ) => {
                 // 毎フレーム最新のstoreを取得
-                const store = useSimStore.getState();
+                const store = useStore.getState();
                 const agents = store.agents;
 
                 // クリア（論理サイズでクリア）
