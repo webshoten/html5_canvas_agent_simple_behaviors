@@ -1,15 +1,23 @@
 import { type RefObject, useEffect } from 'react';
+
 export const AgentCanvas = ({
   mainCanvasRef,
   mainCtxRef,
 }: {
   mainCanvasRef: RefObject<HTMLCanvasElement | null>;
-  mainCtxRef: RefObject<CanvasRenderingContext2D | null>;
+  mainCtxRef: RefObject<
+    CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
+  >;
 }) => {
   useEffect(() => {
-    if (mainCanvasRef.current) {
-      mainCtxRef.current = mainCanvasRef.current.getContext('2d');
-    }
+    const canvas = mainCanvasRef.current;
+    if (!canvas) return;
+
+    // OffscreenCanvasを作成
+    const offscreen = canvas.transferControlToOffscreen();
+
+    // OffscreenCanvasのコンテキストを取得
+    mainCtxRef.current = offscreen.getContext('2d');
   }, [mainCanvasRef, mainCtxRef]);
 
   return (

@@ -6,16 +6,18 @@ import { useStore } from "../state/store";
 
 /**
  * Canvasを高解像度ディスプレイ（Retina等）に対応させるhooks
- * 画面サイズの取得とDPR対応を行い、storeに保存する
- * @param canvasRef - Canvas要素のRef
- * @param ctxRef - CanvasRenderingContext2Dのref
+ * OffscreenCanvas対応版
+ * @param canvasRef - HTMLCanvas要素のRef（CSSスタイル設定用）
+ * @param ctxRef - OffscreenCanvasRenderingContext2Dのref
  */
 export const useCanvasDpr = ({
     canvasRef,
     ctxRef,
 }: {
     canvasRef: RefObject<HTMLCanvasElement | null>;
-    ctxRef: RefObject<CanvasRenderingContext2D | null>;
+    ctxRef: RefObject<
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
+    >;
 }) => {
     const setCanvasSize = useStore((state) => state.setCanvasSize);
 
@@ -30,11 +32,12 @@ export const useCanvasDpr = ({
             const h = window.innerHeight;
             const dpr = window.devicePixelRatio || 1;
 
-            // 物理ピクセルサイズを設定（高解像度対応）
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
+            // OffscreenCanvasの物理ピクセルサイズを設定
+            const offscreen = ctx.canvas;
+            offscreen.width = w * dpr;
+            offscreen.height = h * dpr;
 
-            // CSSサイズは論理サイズのまま
+            // HTMLCanvasElementのCSSサイズを設定
             canvas.style.width = `${w}px`;
             canvas.style.height = `${h}px`;
 

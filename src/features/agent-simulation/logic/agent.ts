@@ -24,7 +24,7 @@ export class Agent {
     }
 
     draw(
-        c: CanvasRenderingContext2D,
+        c: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
         color: string,
     ): void {
         // エージェント本体を描画
@@ -37,7 +37,7 @@ export class Agent {
     update(
         width: number,
         height: number,
-        c: CanvasRenderingContext2D,
+        c: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
         color: string,
     ) {
         // 位置を更新

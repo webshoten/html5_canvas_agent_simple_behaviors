@@ -9,7 +9,9 @@ export const useAgentAnimation = ({
     mainCtxRef,
 }: {
     mainCanvasRef: RefObject<HTMLCanvasElement | null>;
-    mainCtxRef: RefObject<CanvasRenderingContext2D | null>;
+    mainCtxRef: RefObject<
+        CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null
+    >;
 }) => {
     const animatorRef = useRef<ReturnType<typeof createAnimator> | null>(null);
     const canvasSize = useStore((state) => state.canvasSize);
