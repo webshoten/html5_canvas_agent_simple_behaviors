@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Agent } from "@/features/sir-simulation/logic/agent";
+import type { Agent } from "@/features/agent-simulation/logic/agent";
 import { createPopulation } from "../logic/create-population";
 
 export type HistoryPoint = { t: number; s: number; i: number; r: number };
@@ -27,7 +27,7 @@ export const useSimStore = create<StoreState>((set, get) => ({
     lastTs: null,
     simTimeSec: 0,
     config: {
-        populationN: 100,
+        populationN: 4,
         agentRadius: 10,
         color: "hsl(210 80% 60%)",
         velocity: { minSpeed: 0.5, maxSpeed: 2.0 },

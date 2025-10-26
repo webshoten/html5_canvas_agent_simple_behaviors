@@ -1,7 +1,7 @@
 'use client';
 
-import { SirSimulationMain } from '@/features/sir-simulation/ui/main';
+import { AgentSimulationMain } from '@/features/agent-simulation/ui/main';
 
 export default function Home() {
-  return <SirSimulationMain />;
+  return <AgentSimulationMain />;
 }

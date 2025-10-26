@@ -5,7 +5,7 @@ import { useAgentAnimation } from '../hooks/use-agent-animation';
 import { useSimStore } from '../state/store';
 import { AgentCanvas } from './agent-canvas';
 
-export const SirSimulationMain = () => {
+export const AgentSimulationMain = () => {
   const mainCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mainCtxRef = useRef<CanvasRenderingContext2D | null>(null);
 

@@ -35,7 +35,8 @@ export class Agent {
     }
 
     update(
-        canvas: HTMLCanvasElement,
+        width: number,
+        height: number,
         c: CanvasRenderingContext2D,
         color: string,
     ) {
@@ -43,11 +44,11 @@ export class Agent {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
 
-        // 周期境界条件（半径込み）
-        if (this.x < -this.radius) this.x = canvas.width + this.radius; //左端
-        if (this.x > canvas.width + this.radius) this.x = -this.radius; //右端
-        if (this.y < -this.radius) this.y = canvas.height + this.radius; //上端
-        if (this.y > canvas.height + this.radius) this.y = -this.radius; //下端
+        // 周期境界条件（半径込み）- 論理サイズで判定
+        if (this.x < -this.radius) this.x = width + this.radius; //左端
+        if (this.x > width + this.radius) this.x = -this.radius; //右端
+        if (this.y < -this.radius) this.y = height + this.radius; //上端
+        if (this.y > height + this.radius) this.y = -this.radius; //下端
 
         // 描画
         this.draw(c, color);

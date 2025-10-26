@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'html5 canvas test',
-  description: '',
+  description: 'html5 canvas test',
 };
 
 export default function RootLayout({

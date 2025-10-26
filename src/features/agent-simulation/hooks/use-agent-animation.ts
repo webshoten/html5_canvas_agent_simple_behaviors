@@ -38,12 +38,13 @@ export const useAgentAnimation = ({
                 const store = useSimStore.getState();
                 const agents = store.agents;
 
-                // クリア
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // エージェントを更新
+                // クリア（論理サイズでクリア）
+                ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
+                // エージェントを更新（論理サイズで境界判定）
                 agents.forEach((agent) => {
                     agent.update(
-                        canvas,
+                        canvasSize.width,
+                        canvasSize.height,
                         ctx,
                         store.config.color,
                     );
